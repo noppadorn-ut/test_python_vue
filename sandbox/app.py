@@ -186,5 +186,19 @@ def update_user(user_id):
 
     return user_info(user_id)
 
+# delete user
+@app.route('/user/<int:user_id>', methods=['DELETE'])
+@cross_origin()
+def delete_user(user_id):
+    # connection
+    conn = sqlite3.connect('user.db')
+    cur  = conn.cursor()
+
+    # delete user
+    cur.execute('DELETE FROM users WHERE id = ?', (int(user_id), ))
+    conn.commit()
+
+    return {'messge': 'Delete user success'}
+
 if __name__ == '__main__':
     app.run()
