@@ -155,5 +155,36 @@ def create_user():
 
     return user_info(new_user_id)
 
+# update user
+@app.route('/user/<int:user_id>', methods=['PUT'])
+@cross_origin()
+def update_user(user_id):
+    # prepare update data
+    user_request = [
+        request.json['firstname'],
+        request.json['lastname'],
+        request.json['email'],
+        request.json['gender'],
+        int(request.json['age'])
+    ]
+
+    # connection
+    conn = sqlite3.connect('user.db')
+    cur  = conn.cursor()
+
+    # update query string
+    update_q_str  = 'SET'
+    update_q_str += ' first_name = ?,'
+    update_q_str += ' last_name = ?,'
+    update_q_str += ' email = ?,'
+    update_q_str += ' gender = ?,'
+    update_q_str += ' age = ?'
+
+    # update user
+    cur.execute('UPDATE users ' + update_q_str + ' WHERE id = ' + str(user_id), user_request)
+    conn.commit()
+
+    return user_info(user_id)
+
 if __name__ == '__main__':
     app.run()
