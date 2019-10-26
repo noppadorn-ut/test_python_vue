@@ -125,5 +125,35 @@ def user_info(user_id):
     return user
     # return json.dumps(user)
 
+
+# create user
+@app.route('/user', methods=['POST'])
+@cross_origin(origin = '*')
+def create_user():
+    # connection
+    conn = sqlite3.connect('user.db')
+    cur  = conn.cursor()
+
+    # count all users
+    cur.execute('SELECT count(*) FROM users')
+    user_count  = cur.fetchone()[0]
+    new_user_id = (user_count + 1)
+
+    # prepare insert data
+    user_request = [
+        new_user_id,
+        request.json['firstname'],
+        request.json['lastname'],
+        request.json['email'],
+        request.json['gender'],
+        int(request.json['age'])
+    ]
+
+    # insert user
+    cur.execute('INSERT INTO users VALUES (?,?,?,?,?,?)', user_request)
+    conn.commit()
+
+    return user_info(new_user_id)
+
 if __name__ == '__main__':
     app.run()
