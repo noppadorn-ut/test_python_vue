@@ -99,5 +99,31 @@ def get_users():
 
     return res_users
 
+
+# user info
+@app.route('/user/<int:user_id>', methods=['GET'])
+@cross_origin()
+def user_info(user_id):
+    # connection
+    conn = sqlite3.connect('user.db')
+    cur  = conn.cursor()
+
+    # search users
+    cur.execute('SELECT * FROM users WHERE id = ? LIMIT 1', (user_id, ))
+    user_row = cur.fetchone()
+
+    # prepare data
+    user = {
+        'id'       : user_row[0],
+        'firstname': user_row[1],
+        'lastname' : user_row[2],
+        'email'    : user_row[3],
+        'gender'   : user_row[4],
+        'age'      : user_row[5]
+    }
+
+    return user
+    # return json.dumps(user)
+
 if __name__ == '__main__':
     app.run()
