@@ -99,7 +99,6 @@ def get_users():
 
     return res_users
 
-
 # user info
 @app.route('/user/<int:user_id>', methods=['GET'])
 @cross_origin()
@@ -124,7 +123,6 @@ def user_info(user_id):
 
     return user
     # return json.dumps(user)
-
 
 # create user
 @app.route('/user', methods=['POST'])
