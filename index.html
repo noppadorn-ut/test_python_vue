@@ -11,7 +11,83 @@
   </head>
   <body>
     <div id="app-test" class="container">
+      <!-- search filters -->
+      <section class="card mt-4 mb-4">
+        <div class="card-body">
+          <h3>Search filters <span><button class="btn btn-outline-primary btn-sm float-right" type="button">Add user</button></span></h3>
+          <form class="clearfix" @submit.prevent="refreshSearchUsers">
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="frmKeyword">Keyword</label>
+                <input v-model="filters.keyword" type="text" class="form-control" id="frmKeyword" placeholder="keyword">
+              </div>
+              <div class="form-group col-md-6">
+                <label for="frmSearchType">Search type</label>
+                <select v-model="filters.search_type" class="form-control" id="frmSearchType">
+                  <option :value="'name'">Name</option>
+                  <option :value="'email'">Email</option>
+                  <option :value="'gender'">Gender</option>
+                </select>
+              </div>
+              <div class="form-group col-md-6">
+                <label for="frmStartAge">Start age</label>
+                <input v-model="filters.start_age" type="number" step="1" class="form-control" id="frmStartAge" placeholder="start age">
+              </div>
+              <div class="form-group col-md-6">
+                <label for="frmEndAge">End age</label>
+                <input v-model="filters.end_age" type="number" step="1" class="form-control" id="frmEndAge" placeholder="end age">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary float-right">Search</button>
+          </form>
+        </div>
+      </section>
 
+      <!-- search result table -->
+      <section class="card">
+        <div class="card-body">
+          <h3>Search results ({{ numberWithCommas(meta_users.total_data) }})</h3>
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>First name</th>
+                  <th>Last name</th>
+                  <th>Email</th>
+                  <th>Gender</th>
+                  <th>Age</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(user, i) in users">
+                  <td>{{ (meta_users.current_page * meta_users.per_page) + (i + 1 - meta_users.per_page) }}</td>
+                  <td>{{ user.firstname }}</td>
+                  <td>{{ user.lastname }}</td>
+                  <td>{{ user.email }}</td>
+                  <td>{{ user.gender }}</td>
+                  <td>{{ user.age }}</td>
+                  <td>
+                    <button type="button" class="btn btn-outline-primary btn-sm">Edit</button>
+                    <button type="button" class="btn btn-outline-danger btn-sm">Delete</button>
+                  </td>
+                </tr>
+                <tr v-if="users.length <= 0">
+                  <td colspan="7" class="text-center">Empty user</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <b-pagination align="right"
+            v-model="meta_users.current_page"
+            @input="searchUser()"
+            :total-rows="meta_users.total_data"
+            :per-page="meta_users.per_page">
+          </b-pagination>
+        </div>
+      </section>
     </div>
 
     <!-- javascript -->
@@ -53,13 +129,85 @@
           }
         },
         created() {
-          //
+          this.refreshSearchUsers();
         },
         methods: {
-          //
+          numberWithCommas(n) {
+            return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+          },
+          getAppHeaders(type = null, params = null) {
+            let content_type = (type != null) ? type : 'application/json';
+
+            return {
+              headers: {
+                'Content-Type': content_type,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                // 'Authorization': 'Bearer ' + this.user_token,
+              },
+              params: (params != null) ? params : null
+            };
+          },
+          throwErrorAPI(err) {
+            console.log(err);
+          },
+          assignMetaPagination(meta, data) {
+            meta.current_page = data.page;
+            meta.per_page     = data.per_page;
+            meta.total_page   = data.total_page;
+            meta.total_data   = data.total_data;
+          },
+          searchUser() {
+            if ( this.is_search_busy ) {
+              return false;
+            }
+            this.is_search_busy = true;
+
+            axios.get(this.api_url + '/users', this.getAppHeaders('application/json', this.querySearchUsers))
+            .then((res) => {
+              this.users = res.data.data;
+              this.assignMetaPagination(this.meta_users, res.data.meta);
+
+              this.is_search_busy = false;
+              this.is_new_search  = false;
+            })
+            .catch((err) => {
+              this.throwErrorAPI(err);
+
+              this.is_search_busy = false;
+              this.is_new_search  = false;
+            });
+          },
+          refreshSearchUsers() {
+            this.is_new_search = true;
+            this.temp_search   = _.cloneDeep(this.searchUserForm);
+
+            this.meta_users.current_page = 1;
+            this.searchUser();
+          },
         },
         computed: {
-          //
+          querySearchUsers() {
+            if ( this.is_new_search == true ) {
+              return this.searchUserForm;
+            } else {
+              if ( this.temp_search != null ) {
+                this.temp_search.page     = this.meta_users.current_page;
+                this.temp_search.per_page = this.meta_users.per_page;
+              }
+              return this.temp_search;
+            }
+          },
+          searchUserForm() {
+            return {
+              keyword: this.filters.keyword,
+              search_type: this.filters.search_type,
+              start_age: this.filters.start_age,
+              end_age: this.filters.end_age,
+              page: this.meta_users.current_page,
+              per_page: this.meta_users.per_page,
+            };
+          },
         }
       });
     </script>
