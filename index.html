@@ -14,7 +14,7 @@
       <!-- search filters -->
       <section class="card mt-4 mb-4">
         <div class="card-body">
-          <h3>Search filters <span><button class="btn btn-outline-primary btn-sm float-right" type="button">Add user</button></span></h3>
+          <h3>Search filters <span><button class="btn btn-outline-primary btn-sm float-right" type="button" data-toggle="modal" data-target="#createModal">Add user</button></span></h3>
           <form class="clearfix" @submit.prevent="refreshSearchUsers">
             <div class="form-row">
               <div class="form-group col-md-6">
@@ -88,6 +88,59 @@
           </b-pagination>
         </div>
       </section>
+
+      <!-- modal create -->
+      <div id="createModal" class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="createModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <form class="clearfix" @submit.prevent="createUser">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Create user</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <div class="form-row">
+                  <div class="form-group col-md-6">
+                    <label for="frmCreateFirstName">First name</label>
+                    <input v-model="frm_create.firstname" type="text" class="form-control" id="frmCreateFirstName" placeholder="First name">
+                  </div>
+                  <div class="form-group col-md-6">
+                    <label for="frmCreateLastName">Last name</label>
+                    <input v-model="frm_create.lastname" type="text" class="form-control" id="frmCreateLastName" placeholder="Last name">
+                  </div>
+                  <div class="form-group col">
+                    <label for="frmCreateEmail">Email</label>
+                    <input v-model="frm_create.email" type="email" class="form-control" id="frmCreateEmail" placeholder="Email">
+                  </div>
+                  <div class="form-group col-md-6">
+                    <label for="frmEndAge">Gender</label>
+                    <div class="col">
+                      <div class="form-check form-check-inline">
+                        <input v-model="frm_create.gender" class="form-check-input" type="radio" id="frmCreateGenderMale" :value="'male'" checked>
+                        <label class="form-check-label" for="frmCreateGenderMale">Male</label>
+                      </div>
+                      <div class="form-check form-check-inline">
+                        <input v-model="frm_create.gender" class="form-check-input" type="radio" id="frmCreateGenderFemale" :value="'female'" checked>
+                        <label class="form-check-label" for="frmCreateGenderFemale">Female</label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group col-md-6">
+                    <label for="frmCreateAge">Age</label>
+                    <input v-model="frm_create.age" type="number" step="1" class="form-control" id="frmCreateAge" placeholder="age">
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Submit</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
 
     <!-- javascript -->
@@ -126,6 +179,15 @@
 
             // results data
             users: [],
+
+            // frm create
+            frm_create: {
+              firstname: null,
+              lastname: null,
+              email: null,
+              gender: 'male',
+              age: null,
+            },
           }
         },
         created() {
@@ -185,6 +247,33 @@
             this.meta_users.current_page = 1;
             this.searchUser();
           },
+          createUser() {
+            axios.post(this.api_url + '/user', this.createForm, this.getAppHeaders('application/json'))
+            .then((res) => {
+              // alert success
+              swal.fire({
+                type: 'success',
+                title: 'Create user success',
+              })
+              .then(() => {
+                // reset create form
+                this.frm_create.firstname = null;
+                this.frm_create.lastname  = null;
+                this.frm_create.email     = null;
+                this.frm_create.gender    = 'male';
+                this.frm_create.age       = null;
+
+                // hide create modal
+                $('#createModal').modal('hide');
+
+                // refresh users
+                this.refreshSearchUsers();
+              });
+            })
+            .catch((err) => {
+              this.throwErrorAPI(err);
+            });
+          },
         },
         computed: {
           querySearchUsers() {
@@ -206,6 +295,15 @@
               end_age: this.filters.end_age,
               page: this.meta_users.current_page,
               per_page: this.meta_users.per_page,
+            };
+          },
+          createForm() {
+            return {
+              firstname: this.frm_create.firstname,
+              lastname: this.frm_create.lastname,
+              email: this.frm_create.email,
+              gender: this.frm_create.gender,
+              age: this.frm_create.age,
             };
           },
         }
