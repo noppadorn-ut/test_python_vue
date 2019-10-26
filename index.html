@@ -69,7 +69,7 @@
                   <td>{{ user.gender }}</td>
                   <td>{{ user.age }}</td>
                   <td>
-                    <button type="button" class="btn btn-outline-primary btn-sm">Edit</button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" @click="toggleUpdateModal(user)">Edit</button>
                     <button type="button" class="btn btn-outline-danger btn-sm">Delete</button>
                   </td>
                 </tr>
@@ -141,6 +141,60 @@
           </form>
         </div>
       </div>
+
+      <!-- modal update -->
+      <div id="updateModal" class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="updateModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <form class="clearfix" @submit.prevent="updateUser">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Edit user</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <div class="form-row">
+                  <div class="form-group col-md-6">
+                    <label for="frmUpdateFirstName">First name</label>
+                    <input v-model="frm_update.firstname" type="text" class="form-control" id="frmUpdateFirstName" placeholder="First name">
+                  </div>
+                  <div class="form-group col-md-6">
+                    <label for="frmUpdateLastName">Last name</label>
+                    <input v-model="frm_update.lastname" type="text" class="form-control" id="frmUpdateLastName" placeholder="Last name">
+                  </div>
+                  <div class="form-group col">
+                    <label for="frmUpdateEmail">Email</label>
+                    <input v-model="frm_update.email" type="email" class="form-control" id="frmUpdateEmail" placeholder="Email">
+                  </div>
+                  <div class="form-group col-md-6">
+                    <label for="frmEndAge">Gender</label>
+                    <div class="col">
+                      <div class="form-check form-check-inline">
+                        <input v-model="frm_update.gender" class="form-check-input" type="radio" id="frmUpdateGenderMale" :value="'male'" checked>
+                        <label class="form-check-label" for="frmUpdateGenderMale">Male</label>
+                      </div>
+                      <div class="form-check form-check-inline">
+                        <input v-model="frm_update.gender" class="form-check-input" type="radio" id="frmUpdateGenderFemale" :value="'female'" checked>
+                        <label class="form-check-label" for="frmUpdateGenderFemale">Female</label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group col-md-6">
+                    <label for="frmUpdateAge">Age</label>
+                    <input v-model="frm_update.age" type="number" step="1" class="form-control" id="frmUpdateAge" placeholder="age">
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Submit</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
     </div>
 
     <!-- javascript -->
@@ -182,6 +236,16 @@
 
             // frm create
             frm_create: {
+              firstname: null,
+              lastname: null,
+              email: null,
+              gender: 'male',
+              age: null,
+            },
+
+            // frm update
+            frm_update: {
+              id: null,
               firstname: null,
               lastname: null,
               email: null,
@@ -274,6 +338,44 @@
               this.throwErrorAPI(err);
             });
           },
+          toggleUpdateModal(user) {
+            this.frm_update.id        = user.id;
+            this.frm_update.firstname = user.firstname;
+            this.frm_update.lastname  = user.lastname;
+            this.frm_update.email     = user.email;
+            this.frm_update.gender    = user.gender;
+            this.frm_update.age       = user.age;
+
+            $('#updateModal').modal('show');
+          },
+          updateUser() {
+            axios.put(this.api_url + '/user/' + this.frm_update.id, this.updateForm, this.getAppHeaders('application/json'))
+            .then((res) => {
+              // alert success
+              swal.fire({
+                type: 'success',
+                title: 'Update user success',
+              })
+              .then(() => {
+                // reset update form
+                this.frm_update.id        = null;
+                this.frm_update.firstname = null;
+                this.frm_update.lastname  = null;
+                this.frm_update.email     = null;
+                this.frm_update.gender    = 'male';
+                this.frm_update.age       = null;
+
+                // hide update modal
+                $('#updateModal').modal('hide');
+
+                // refresh current search
+                this.searchUser();
+              });
+            })
+            .catch((err) => {
+              this.throwErrorAPI(err);
+            });
+          },
         },
         computed: {
           querySearchUsers() {
@@ -304,6 +406,15 @@
               email: this.frm_create.email,
               gender: this.frm_create.gender,
               age: this.frm_create.age,
+            };
+          },
+          updateForm() {
+            return {
+              firstname: this.frm_update.firstname,
+              lastname: this.frm_update.lastname,
+              email: this.frm_update.email,
+              gender: this.frm_update.gender,
+              age: this.frm_update.age,
             };
           },
         }
